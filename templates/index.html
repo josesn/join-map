@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <style>
+        .nav-item {
+            padding: 10px;
+            align-items: center;
+        }
+        .form-button {
+            padding: 10px;
+        }
+        .nav {
+           justify-content: center;
+        }
+        div.row {
+            justify-content: center;
+        }
+        .col-md-8 {
+            display: flex;
+            justify-content: center;
+        }
+        
+    </style>
+    <title>Target Map</title>
+  </head>
+  <body>
+    <ul class="nav">
+        <li class="nav-item">
+            <!-- Active Modal -->
+            <button type="button" id='btnModal' class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal">
+                Adicionar Alvo
+            </button>
+        </li>
+        <div >
+             <!-- Modal -->
+             <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                 <div class="modal-dialog">
+                 <div class="modal-content">
+                     <div class="modal-header">
+                     <h5 class="modal-title" id="exampleModalLabel">Alvo</h5>
+                     
+                     </div>
+                     <div class="modal-body">
+                         <!-- FORM -->
+                         <form action="{% url 'target_map' %}" class="form-target" method="POST" id="target-form">
+                             {% csrf_token %}
+                             
+                             {{form.as_p}}
+                           </form>
+                     </div>
+                     <div class="modal-footer">
+                     <button type="submit" id='btnSave' class="btn btn-primary" form="target-form"> Salvar </button>
+                     <form>
+                        <button type="button" id='btnExclude' class="btn btn-secondary" data-bs-dismiss="modal">Excluir</button>
+                     </form>
+                     <button type="button" id='btnClose' class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                     </div>
+                 </div>
+                 </div>
+             </div>
+         </div>
+      </ul>
+    <div class="map-container">
+        <div class="row mt-2">
+            <div class="col-md-8">
+                <div id="map" style="height: 800px; width: 1000px;"></div>
+        </div>
+    </div>
+   
+
+    <!-- Optional JavaScript; choose one of the two! -->
+
+    <!-- Option 1: Bootstrap Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+
+    <!-- Option 2: Separate Popper and Bootstrap JS -->
+    <!--
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js" integrity="sha384-IQsoLXl5PILFhosVNubq5LC7Qb9DXgDA9i+tQ8Zj3iwWAwPtgFTxbJ8NT4GN1R8p" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.min.js" integrity="sha384-cVKIPhGWiC2Al4u+LWgxfKTRIcfu0JTxR+EQDz/bgldoEyl4H0zUF0QKbrJ0EcQF" crossorigin="anonymous"></script>
+    -->
+    {{targets|json_script:"targets_json"}}
+    
+    {% block content %}
+        <script>
+        // Map
+        var link = "";
+        var map = L.map('map').setView([19, -12], 2);
+        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        }).addTo(map);
+
+        document.getElementById("btnExclude").style.display = "none";
+        let targets = JSON.parse(document.getElementById('targets_json').textContent)
+
+       
+
+        targets.forEach(target => {
+            let geocode = target.geocode.split(',');
+            let lat = parseFloat(geocode[0])
+            let long = parseFloat(geocode[1])
+
+            var marker = L.marker([lat, long]).addTo(map).on('click', () => {
+                let myModal = new bootstrap.Modal(document.getElementById('exampleModal'), {});
+                myModal.show();
+                document.getElementById("btnExclude").style.display = "";
+                document.getElementById("id_name").value = target.name
+                document.getElementById("id_geocode").value = target.geocode
+                document.getElementById("id_expire_date").value = target.expire_date
+               
+            });
+
+            
+        })
+
+        var myModalEl = document.getElementById('exampleModal')
+        myModalEl.addEventListener('hidden.bs.modal', function (event) {
+            document.getElementById("btnExclude").style.display = "none";
+            document.getElementById("id_name").value = ""
+            document.getElementById("id_geocode").value = ""
+            document.getElementById("id_expire_date").value = ""
+        })
+        
+        </script>
+    {% endblock %}
+  </body>
+</html>
